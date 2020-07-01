@@ -80,7 +80,4 @@ void write(std::ofstream &fp, Type &info, std::size_t size) {
 // bit extract
 unsigned char bitextract(const unsigned int byte, const unsigned int mask);
 
-//blur image
-RGBQuad** Blur(RGBQuad** rgbInfo, const BitMapInfoHeader& fileInfoHeader, int threadsCount, int processorsCount);
-
 #endif // MAIN_H_INCLUDEDs
