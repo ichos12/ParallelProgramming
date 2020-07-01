@@ -1,0 +1,10 @@
+﻿  pch.cpp
+  main.cpp
+c:\users\max\source\repos\lw2\lw2\main.cpp(268): warning C4018: <: несоответствие типов со знаком и без знака
+c:\users\max\source\repos\lw2\lw2\main.cpp(270): warning C4018: <: несоответствие типов со знаком и без знака
+c:\users\max\source\repos\lw2\lw2\main.cpp(282): warning C4018: <: несоответствие типов со знаком и без знака
+c:\users\max\source\repos\lw2\lw2\main.cpp(307): warning C4018: <: несоответствие типов со знаком и без знака
+  Создание кода
+  All 164 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Создание кода завершено
+  lw2.vcxproj -> C:\Users\Max\source\repos\lw2\Release\lw2.exe
