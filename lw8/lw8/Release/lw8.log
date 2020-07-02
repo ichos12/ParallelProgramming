@@ -1,0 +1,16 @@
+﻿  pch.cpp
+  Blur.cpp
+c:\users\max\source\repos\lw8\lw8\blur.cpp(15): warning C4018: <: несоответствие типов со знаком и без знака
+  main.cpp
+c:\users\max\source\repos\lw8\lw8\main.cpp(267): warning C4018: <: несоответствие типов со знаком и без знака
+c:\users\max\source\repos\lw8\lw8\main.cpp(290): warning C4018: <: несоответствие типов со знаком и без знака
+c:\users\max\source\repos\lw8\lw8\main.cpp(309): warning C4018: <: несоответствие типов со знаком и без знака
+c:\users\max\source\repos\lw8\lw8\main.cpp(312): warning C4018: <: несоответствие типов со знаком и без знака
+c:\users\max\source\repos\lw8\lw8\main.cpp(320): warning C4018: <: несоответствие типов со знаком и без знака
+c:\users\max\source\repos\lw8\lw8\main.cpp(420): warning C4018: <: несоответствие типов со знаком и без знака
+  Pool.cpp
+  Worker.cpp
+  Создание кода
+  All 965 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Создание кода завершено
+  lw8.vcxproj -> C:\Users\Max\source\repos\lw8\Release\lw8.exe
