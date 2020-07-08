@@ -1,18 +1,17 @@
 #include "pch.h"
 #include "Blur.h"
 
-Blur::Blur(RGBQuad** defaultRgbInfo, RGBQuad** blurredRgbInfo, BitMapInfoHeader& fileInfoHeader, int startRow, int endRow)
+Blur::Blur(RGBQuad** defaultRgbInfo, RGBQuad** blurredRgbInfo, BitMapInfoHeader& fileInfoHeader, ThreadParams& threadParams)
 	: m_defaultRgbInfo(defaultRgbInfo)
 	, m_blurredRgbInfo(blurredRgbInfo)
 	, m_fileInfoHeader(fileInfoHeader)
-	, m_startRow(startRow)
-	, m_endRow(endRow)
+	, m_threadParams(threadParams)
 {
 }
 
 void Blur::Execute()
 {
-	for (unsigned int i = m_startRow; i < m_endRow; ++i)
+	for (unsigned int i = m_threadParams.startRow; i < m_threadParams.endRow; ++i)
 	{
 		for (unsigned int j = 0; j < m_fileInfoHeader.biWidth; ++j)
 		{

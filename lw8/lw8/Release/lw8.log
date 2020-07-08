@@ -1,16 +1,16 @@
-﻿  pch.cpp
-  Blur.cpp
-c:\users\max\source\repos\lw8\lw8\blur.cpp(15): warning C4018: <: несоответствие типов со знаком и без знака
+﻿  Blur.cpp
+c:\users\max\source\repos\lw8\lw8\blur.cpp(14): warning C4018: <: несоответствие типов со знаком и без знака
   main.cpp
-c:\users\max\source\repos\lw8\lw8\main.cpp(267): warning C4018: <: несоответствие типов со знаком и без знака
-c:\users\max\source\repos\lw8\lw8\main.cpp(290): warning C4018: <: несоответствие типов со знаком и без знака
-c:\users\max\source\repos\lw8\lw8\main.cpp(309): warning C4018: <: несоответствие типов со знаком и без знака
-c:\users\max\source\repos\lw8\lw8\main.cpp(312): warning C4018: <: несоответствие типов со знаком и без знака
-c:\users\max\source\repos\lw8\lw8\main.cpp(320): warning C4018: <: несоответствие типов со знаком и без знака
-c:\users\max\source\repos\lw8\lw8\main.cpp(420): warning C4018: <: несоответствие типов со знаком и без знака
-  Pool.cpp
-  Worker.cpp
+c:\users\max\source\repos\lw8\lw8\main.cpp(289): warning C4018: <: несоответствие типов со знаком и без знака
+c:\users\max\source\repos\lw8\lw8\main.cpp(384): warning C4018: <: несоответствие типов со знаком и без знака
+c:\users\max\source\repos\lw8\lw8\main.cpp(413): warning C4018: <: несоответствие типов со знаком и без знака
+c:\users\max\source\repos\lw8\lw8\main.cpp(416): warning C4018: <: несоответствие типов со знаком и без знака
+c:\users\max\source\repos\lw8\lw8\main.cpp(428): warning C4018: <: несоответствие типов со знаком и без знака
+c:\users\max\source\repos\lw8\lw8\main.cpp(431): warning C4018: <: несоответствие типов со знаком и без знака
+c:\users\max\source\repos\lw8\lw8\main.cpp(441): warning C4018: <: несоответствие типов со знаком и без знака
   Создание кода
-  All 965 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  3 of 1013 functions ( 0.3%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    1 functions had inline decision re-evaluated but remain unchanged
   Создание кода завершено
   lw8.vcxproj -> C:\Users\Max\source\repos\lw8\Release\lw8.exe

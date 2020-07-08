@@ -69,7 +69,7 @@ typedef struct {
 	int endRow;
 	int threadNum;
 	int blurRadius;
-} ThreadParam;
+} ThreadParams;
 
 // read bytes
 template <typename Type>

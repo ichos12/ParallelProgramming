@@ -5,12 +5,13 @@
 #include <time.h>
 #include <string>
 #include <vector>
+#include <iterator>
 #include <mmsystem.h>
 
 #include "main.h"
-#include "Worker.h"
 #include "Pool.h"
 #include "Blur.h"
+#include "ITask.h"
 
 using namespace std;
 
@@ -259,80 +260,73 @@ void writeBitMap(const string& fileName, const BitMapFileHeader& fileHeader, con
 	}
 }
 
-vector<RGBQuad**> blurImages(vector<RGBQuad**> defaultRgbInfos, vector<BitMapInfoHeader> fileInfoHeaders, unsigned blocksAmount)
+RGBQuad** blurImage(RGBQuad** defaultRgbInfo, RGBQuad** blurredRgbInfo, BitMapInfoHeader fileInfoHeader, int blocksAmount)
 {
-	vector<Worker> workers;
 	vector<ITask*> tasks;
-	vector<RGBQuad**> blurredRgbInfos;
-	for (int i = 0; i < fileInfoHeaders.size(); ++i)
+	ThreadParams* threadParams = new ThreadParams[blocksAmount];
+	div_t divider = div(fileInfoHeader.biHeight, blocksAmount);
+
+	int startRow = 0;
+	int endRow = divider.quot;
+	int remainder = divider.rem;
+	for (int i = 0; i < blocksAmount; i++)
 	{
-		RGBQuad** blurredRgbInfo = new RGBQuad*[fileInfoHeaders[i].biHeight];
-		for (unsigned j = 0; j < fileInfoHeaders[i].biHeight; j++)
+		if (remainder != 0)
 		{
-			blurredRgbInfo[j] = new RGBQuad[fileInfoHeaders[i].biWidth];
+			endRow++;
+			remainder--;
 		}
-		blurredRgbInfos.push_back(blurredRgbInfo);
 
-		unsigned endRow = fileInfoHeaders[i].biHeight / blocksAmount;
-		unsigned startRow = 0;
-		for (unsigned j = 0; j < blocksAmount; j++)
-		{
-			workers.push_back(Worker());
-			tasks.push_back(new Blur(defaultRgbInfos[i], blurredRgbInfos[i], fileInfoHeaders[i], startRow, endRow));
-			startRow += fileInfoHeaders[i].biHeight / blocksAmount;
-			endRow += fileInfoHeaders[i].biHeight / blocksAmount;
-		}
-		
+		threadParams[i] = { startRow, endRow, i };
+
+		startRow = endRow;
+		endRow += divider.quot;
+
+		tasks.push_back(new Blur(defaultRgbInfo, blurredRgbInfo, fileInfoHeader, threadParams[i]));
 	}
+	HANDLE* handles = new HANDLE[tasks.size()];
 
-	clock_t startTime = clock();
-
-	for (int i = 0; i < workers.size(); i++)
+	for (int i = 0; i < tasks.size(); i++)
 	{
-		workers[i].ExecuteTask(tasks[i]);
+		handles[i] = CreateThread(NULL, 0, &ThreadProc, tasks[i], CREATE_SUSPENDED, NULL);
+		ResumeThread(handles[i]);
 	}
 
-	for (Worker worker : workers)
-	{
-		worker.Wait();
-	}
+	WaitForMultipleObjects(tasks.size(), handles, TRUE, INFINITE);
 
-	cout << clock() - startTime << " ms";
-
-	return blurredRgbInfos;
+	return blurredRgbInfo;
 }
 
-vector<RGBQuad**> blurImagesWithPool(vector<RGBQuad**> defaultRgbInfos, vector<BitMapInfoHeader> fileInfoHeaders, int blocksAmount, int threadsAmount)
+RGBQuad** blurImageWithPool(RGBQuad** defaultRgbInfo, RGBQuad** blurredRgbInfo, BitMapInfoHeader fileInfoHeader, int blocksAmount, int threadsAmount)
 {
 	vector<ITask*> tasks;
-	vector<RGBQuad**> blurredRgbInfos;
-	for (int i = 0; i < fileInfoHeaders.size(); ++i)
+
+	ThreadParams* threadParams = new ThreadParams[blocksAmount];
+	div_t divider = div(fileInfoHeader.biHeight, blocksAmount);
+
+	int startRow = 0;
+	int endRow = divider.quot;
+	int remainder = divider.rem;
+	for (int i = 0; i < blocksAmount; i++)
 	{
-		RGBQuad** blurredRgbInfo = new RGBQuad *[fileInfoHeaders[i].biHeight];
-		for (int j = 0; j < fileInfoHeaders[i].biHeight; j++)
+		if (remainder != 0)
 		{
-			blurredRgbInfo[j] = new RGBQuad[fileInfoHeaders[i].biWidth];
-		}
-		blurredRgbInfos.push_back(blurredRgbInfo);
-
-		unsigned endRow = fileInfoHeaders[i].biHeight / blocksAmount;
-		unsigned startRow = 0;
-		for (unsigned j = 0; j < blocksAmount; j++)
-		{
-			tasks.push_back(new Blur(defaultRgbInfos[i], blurredRgbInfos[i], fileInfoHeaders[i], startRow, endRow));
-			startRow += fileInfoHeaders[i].biHeight / blocksAmount;
-			endRow += fileInfoHeaders[i].biHeight / blocksAmount;
+			endRow++;
+			remainder--;
 		}
 
+		threadParams[i] = { startRow, endRow, i };
+
+		startRow = endRow;
+		endRow += divider.quot;
+
+		tasks.push_back(new Blur(defaultRgbInfo, blurredRgbInfo, fileInfoHeader, threadParams[i]));
 	}
 
 	Pool pool(tasks, threadsAmount);
-
-	clock_t startTime = clock();
 	pool.Execute();
-	cout << clock() - startTime << " ms";
 
-	return blurredRgbInfos;
+	return blurredRgbInfo;
 }
 
 int main(int argc, char *argv[])
@@ -354,7 +348,7 @@ int main(int argc, char *argv[])
 		processingMode = ProcessingMode::base;
 	}
 	else if (strcmp(argv[1], "1") == 0)
-	{ 
+	{
 		processingMode = ProcessingMode::pool;
 	}
 	else
@@ -367,29 +361,34 @@ int main(int argc, char *argv[])
 	string outputImgDir = argv[4];
 	int threadsAmount = atoi(argv[5]);
 
-	if (!fs::exists(inputImgDir)) {
+	if (!fs::exists(inputImgDir))
+	{
 		throw exception("This directory does not exist");
 	}
 
-	if (!fs::exists(outputImgDir)) {
+	if (!fs::exists(outputImgDir))
+	{
 		fs::create_directories(outputImgDir);
 	}
 
-	vector<string> inputImgPaths;
-	vector<string> outputImgPaths;
+	fs::recursive_directory_iterator begin(inputImgDir);
+	fs::recursive_directory_iterator end;
 
-	for (const auto& file : fs::directory_iterator(inputImgDir))
+	vector<fs::path> inputImgPaths;
+	vector<fs::path> outputImgPaths;
+
+	copy_if(begin, end, std::back_inserter(inputImgPaths), [](const fs::path& path) {
+		return fs::is_regular_file(path) && (path.extension() == ".bmp");
+	});
+
+	for (int i = 0; i < inputImgPaths.size(); i++)
 	{
-		auto path = file.path();
+		ifstream  input(inputImgPaths[i], ios::binary);
 
-
-		if (path.extension() == ".bmp")
-		{
-			inputImgPaths.push_back(path.string());
-			outputImgPaths.push_back(outputImgDir + "/" + "out-" + path.stem().string() + ".bmp");
-		}
+		string outputFileName = outputImgDir + "/out" + to_string(i) + ".bmp";
+		outputImgPaths.push_back(outputFileName);
 	}
-	
+
 	vector<BitMapFileHeader> fileHeaders;
 	vector<BitMapInfoHeader> fileInfoHeaders;
 	vector<RGBQuad**> rgbInfos;
@@ -400,26 +399,49 @@ int main(int argc, char *argv[])
 		BitMapInfoHeader fileInfoHeader;
 		RGBQuad** rgbInfo;
 
-		rgbInfo = readBitMap(inputImgPaths[i], fileHeader, fileInfoHeader);
+		rgbInfo = readBitMap(inputImgPaths[i].string(), fileHeader, fileInfoHeader);
 
 		fileHeaders.push_back(fileHeader);
 		fileInfoHeaders.push_back(fileInfoHeader);
 		rgbInfos.push_back(rgbInfo);
 	}
 
-	vector<RGBQuad**> blurredRgbInfos;
+	vector<RGBQuad**> blurredImgs;
 	if (processingMode == ProcessingMode::base)
 	{
-		blurredRgbInfos = blurImages(rgbInfos, fileInfoHeaders, blocksAmount);
+		clock_t startTime = clock();
+		for (int i = 0; i < fileInfoHeaders.size(); i++)
+		{
+			RGBQuad** blurredRgbInfo = new RGBQuad*[fileInfoHeaders[i].biHeight];
+			for (int j = 0; j < fileInfoHeaders[i].biHeight; j++)
+			{
+				blurredRgbInfo[j] = new RGBQuad[fileInfoHeaders[i].biWidth];
+			}
+			RGBQuad** blurredImg = blurImage(rgbInfos[i], blurredRgbInfo, fileInfoHeaders[i], blocksAmount);
+			blurredImgs.push_back(blurredImg);
+		}
+		cout << clock() - startTime << " ms";
 	}
 	else if (processingMode == ProcessingMode::pool)
 	{
-		blurredRgbInfos = blurImagesWithPool(rgbInfos, fileInfoHeaders, blocksAmount, threadsAmount);
+		clock_t startTime = clock();
+		for (int i = 0; i < fileInfoHeaders.size(); i++)
+		{
+			RGBQuad** blurredRgbInfo = new RGBQuad*[fileInfoHeaders[i].biHeight];
+			for (int j = 0; j < fileInfoHeaders[i].biHeight; j++)
+			{
+				blurredRgbInfo[j] = new RGBQuad[fileInfoHeaders[i].biWidth];
+			}
+			RGBQuad** blurredImg = blurImageWithPool(rgbInfos[i], blurredRgbInfo, fileInfoHeaders[i], blocksAmount, threadsAmount);
+			blurredImgs.push_back(blurredImg);
+		}
+		cout << clock() - startTime << " ms";
 	}
 
-	for (int i = 0; i < fileHeaders.size(); i++)
+	for (int i = 0; i < blurredImgs.size(); i++)
 	{
-		writeBitMap(outputImgPaths[i], fileHeaders[i], fileInfoHeaders[i], blurredRgbInfos[i]);
+		writeBitMap(outputImgPaths[i].string(), fileHeaders[i], fileInfoHeaders[i], blurredImgs[i]);
 	}
+
 	return 0;
 }
