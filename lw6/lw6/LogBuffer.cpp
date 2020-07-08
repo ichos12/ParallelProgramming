@@ -6,67 +6,51 @@ LogBuffer::LogBuffer(LogFileWriter* logFileWriter)
 	: m_criticalSection(CRITICAL_SECTION())
 	, m_logFileWriter(logFileWriter)
 {
-	if (!InitializeCriticalSectionAndSpinCount(&m_criticalSection, 0x00000400))
-	{
-		throw std::exception("Critical section not initialize");
-	}
+	InitializeCriticalSectionAndSpinCount(&m_criticalSection, 0x00000400);
 
-	m_eventHandle = CreateEvent(nullptr, true, false, L"Event");
-	m_threadHandle = CreateThread(nullptr, 0, &LogSizeMonitoringThread, (void*)this, 0, nullptr);
+	m_eventHandle = CreateEvent(NULL, FALSE, FALSE, NULL);
+	m_threadHandle = CreateThread(NULL, 0, &LogSizeMonitoringThread, this, 0, NULL);
 }
 
 LogBuffer::~LogBuffer()
 {
+	DeleteCriticalSection(&m_criticalSection);
 	CloseHandle(m_eventHandle);
 	CloseHandle(m_threadHandle);
-
-	if (&m_criticalSection)
-	{
-		DeleteCriticalSection(&m_criticalSection);
-	}
 }
 
 void LogBuffer::AddData(std::string value)
 {
-	if (&m_criticalSection)
-	{
-		EnterCriticalSection(&m_criticalSection);
-	}
+	EnterCriticalSection(&m_criticalSection);
 
 	if (List.GetSize() >= MAX_SIZE)
 	{
 		SetEvent(m_eventHandle);
-
-		if (WaitForSingleObject(m_threadHandle, INFINITE) == WAIT_OBJECT_0)
-		{
-			ResetEvent(m_eventHandle);
-			m_threadHandle = CreateThread(nullptr, 0, &LogSizeMonitoringThread, (void*)this, 0, nullptr);
-		}
+		ResumeThread(m_threadHandle);
+		WaitForSingleObject(m_threadHandle, INFINITE);
+		List.Clear();
 	}
 
 	List.Push(value);
 
-	if (&m_criticalSection)
-	{
-		LeaveCriticalSection(&m_criticalSection);
-	}
+	LeaveCriticalSection(&m_criticalSection);
 }
 
 DWORD WINAPI LogBuffer::LogSizeMonitoringThread(const LPVOID lpParam)
 {
 	LogBuffer* data = (LogBuffer*)lpParam;
-
-	if (WaitForSingleObject(data->m_eventHandle, INFINITE) == WAIT_OBJECT_0)
+	DWORD dwWaitResult = WAIT_TIMEOUT;
+	while (dwWaitResult != WAIT_OBJECT_0) 
 	{
-		auto listSize = data->List.GetSize();
-
-		for (size_t i = 0; i < listSize; i++)
-		{
-			data->m_logFileWriter->Write(data->List.GetHead());
-
-			data->List.Pop();
-		}
+		dwWaitResult = WaitForSingleObject(data->m_eventHandle, 1);
 	}
 
+	for (int i = 0; i < data->List.GetSize(); i++)
+	{
+		data->m_logFileWriter->Write(data->List.GetHead());
+		data->List.Pop();
+	}
+
+	ResetEvent(data->m_eventHandle);
 	ExitThread(0);
 }
