@@ -322,7 +322,6 @@ RGBQuad** blurImageWithPool(RGBQuad** defaultRgbInfo, RGBQuad** blurredRgbInfo, 
 
 		tasks.push_back(new Blur(defaultRgbInfo, blurredRgbInfo, fileInfoHeader, threadParams[i]));
 	}
-
 	Pool pool(tasks, threadsAmount);
 	pool.Execute();
 
